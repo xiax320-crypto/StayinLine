@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>STAY IN LINE — Mobile Routes</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;height:100%;background:#111;color:#f4f1e8;font-family:Arial,Helvetica,sans-serif}body{overflow:hidden}main{height:100vh;height:100dvh;width:100%;max-width:430px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column}header,footer{display:flex;align-items:center;justify-content:space-between;gap:14px}header{font-size:10px;letter-spacing:.17em;color:#a7a49e}#stage{position:relative;flex:1;min-height:130px;touch-action:none;cursor:crosshair}canvas{width:100%;height:100%;display:block}footer{min-height:104px}#message{font-size:11px;letter-spacing:.13em;line-height:1.9;color:#d0cec6}#counter{color:#e8c54a}button{background:none;color:#f4f1e8;border:1px solid #77736a;padding:11px 13px;font-size:10px;letter-spacing:.12em;min-height:43px;cursor:pointer}button:hover,button:focus-visible{border-color:#e8c54a;outline:none}#next{border-color:#e8c54a;color:#e8c54a}#controls{display:flex;gap:8px;align-items:center}@media(max-width:500px){header{font-size:9px;padding-top:2px}footer{align-items:flex-end}#message{font-size:10px;max-width:58%}button{padding:10px 11px}#controls{gap:6px}} @media(max-width:360px){main{padding-left:12px;padding-right:12px}footer{min-height:112px}#message{font-size:9px;letter-spacing:.1em}button{font-size:9px;padding:9px}}
+</style></head><body><main>
+<header><span>STAY IN LINE</span><span id="chapter">01 / THE STRAIGHT LINE</span></header>
+<div id="stage" aria-label="Drag the yellow dot from START to END along the line. Your movement leaves a trace."><canvas id="art"></canvas></div>
+<footer><div id="message" aria-live="polite">FOLLOW THE LINE.<br><span id="counter">START → END</span></div><div id="controls"><button id="reset" type="button">RESET</button><button id="next" type="button" hidden>NEXT ROUTE →</button></div></footer>
+</main><script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('art'),stage=document.getElementById('stage'),ctx=canvas.getContext('2d');
+const message=document.getElementById('message'),counter=document.getElementById('counter'),chapter=document.getElementById('chapter'),reset=document.getElementById('reset'),next=document.getElementById('next');
+let W=1,H=1,dpr=1,level=0,dragId=null,done=false,trail=[],dot=null,route=[],lastProgress=0;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const routes=[
+ [[.5,.86],[.5,.14]],
+ [[.5,.89],[.5,.75],[.22,.75],[.22,.57],[.78,.57],[.78,.37],[.38,.37],[.38,.12]]
+];
+function toPx(q){return{x:q[0]*W,y:q[1]*H}}
+function buildRoute(){route=routes[level].map(toPx);dot={...route[0]};trail=[{...dot}];lastProgress=0;done=false;dragId=null;next.hidden=true;chapter.textContent=level===0?'01 / THE STRAIGHT LINE':'02 / THE DETOUR';message.innerHTML=level===0?'FOLLOW THE LINE.<br><span id="counter">START → END</span>':'THE ROUTE IS NO LONGER STRAIGHT.<br><span id="counter">START → END</span>';render();}
+function resize(){const r=canvas.getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);dpr=Math.min(devicePixelRatio||1,3);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);if(route.length){const oldW=resize.oldW||W,oldH=resize.oldH||H;trail=trail.map(p=>({x:p.x/oldW*W,y:p.y/oldH*H}));dot={x:dot.x/oldW*W,y:dot.y/oldH*H};route=routes[level].map(toPx);render()}else buildRoute();resize.oldW=W;resize.oldH=H;}
+function line(points,color,width,dash=[]){if(points.length<2)return;ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='round';ctx.setLineDash(dash);ctx.stroke();ctx.setLineDash([])}
+function smooth(points,color,width){if(points.length<2)return;ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);for(let i=1;i<points.length-1;i++){const p=points[i],q=points[i+1];ctx.quadraticCurveTo(p.x,p.y,(p.x+q.x)/2,(p.y+q.y)/2)}const e=points[points.length-1];ctx.lineTo(e.x,e.y);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke()}
+function label(text,p,offset){ctx.fillStyle='#aaa79e';ctx.font='10px Arial, sans-serif';ctx.textAlign='center';ctx.fillText(text,p.x,p.y+offset)}
+function render(){ctx.clearRect(0,0,W,H);line(route,'#f4f1e8',1.5);const a=route[0],b=route[route.length-1];ctx.strokeStyle='#f4f1e8';ctx.lineWidth=1.2;ctx.strokeRect(a.x-5,a.y-5,10,10);ctx.beginPath();ctx.arc(b.x,b.y,5,0,Math.PI*2);ctx.stroke();label('START',a,25);label('END',b,-17);smooth(trail,'rgba(232,197,74,.82)',2);ctx.beginPath();ctx.arc(dot.x,dot.y,7,0,Math.PI*2);ctx.fillStyle='#e8c54a';ctx.fill();if(done){ctx.beginPath();ctx.arc(b.x,b.y,12,0,Math.PI*2);ctx.strokeStyle='rgba(232,197,74,.6)';ctx.stroke()}}
+function pos(e){const r=canvas.getBoundingClientRect();return{x:clamp(e.clientX-r.left,0,W),y:clamp(e.clientY-r.top,0,H)}}
+function nearest(p){let best={dist:Infinity,progress:0},passed=0,total=0;for(let i=1;i<route.length;i++)total+=Math.hypot(route[i].x-route[i-1].x,route[i].y-route[i-1].y);for(let i=1;i<route.length;i++){const a=route[i-1],b=route[i],dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy),t=clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/(len*len||1),0,1),x=a.x+dx*t,y=a.y+dy*t,dist=Math.hypot(p.x-x,p.y-y);if(dist<best.dist)best={dist,progress:(passed+len*t)/total};passed+=len;}return best;}
+function down(e){if(done||dragId!==null)return;const p=pos(e);if(Math.hypot(p.x-dot.x,p.y-dot.y)>Math.max(38,e.pointerType==='touch'?52:38))return;dragId=e.pointerId;stage.setPointerCapture(dragId);e.preventDefault();}
+function move(e){if(e.pointerId!==dragId||done)return;const p=pos(e),near=nearest(p),delta=Math.hypot(p.x-dot.x,p.y-dot.y);if(delta<.4)return;const n=Math.min(100,Math.ceil(delta/3));for(let i=1;i<=n;i++)trail.push({x:dot.x+(p.x-dot.x)*i/n,y:dot.y+(p.y-dot.y)*i/n});dot=p;if(trail.length>5000)trail=trail.filter((_,i)=>i%2===0);if(near.dist<Math.max(27,Math.min(W,H)*.065))lastProgress=Math.max(lastProgress,near.progress);if(lastProgress>.965&&Math.hypot(p.x-route.at(-1).x,p.y-route.at(-1).y)<25){done=true;message.firstChild.textContent=level===0?'YOU REACHED THE END.':'YOU FOUND YOUR WAY.';document.getElementById('counter').textContent=level===0?'THE NEXT LINE WILL BEND.':'EVERY DETOUR LEAVES A TRACE.';if(level===0)next.hidden=false;}render();}
+function up(e){if(e.pointerId!==dragId)return;dragId=null;}
+stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);stage.addEventListener('lostpointercapture',up);
+reset.addEventListener('click',buildRoute);next.addEventListener('click',()=>{level=1;buildRoute()});
+if(window.ResizeObserver)new ResizeObserver(resize).observe(stage);else window.addEventListener('resize',resize);
+resize();
+})();
+</script></body></html>
