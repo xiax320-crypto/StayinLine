@@ -1,38 +1,439 @@
+
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>STAY IN LINE — Mobile Routes</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>STAY IN LINE</title>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;height:100%;background:#111;color:#f4f1e8;font-family:Arial,Helvetica,sans-serif}body{overflow:hidden}main{height:100vh;height:100dvh;width:100%;max-width:430px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column}header,footer{display:flex;align-items:center;justify-content:space-between;gap:14px}header{font-size:10px;letter-spacing:.17em;color:#a7a49e}#stage{position:relative;flex:1;min-height:130px;touch-action:none;cursor:crosshair}canvas{width:100%;height:100%;display:block}footer{min-height:104px}#message{font-size:11px;letter-spacing:.13em;line-height:1.9;color:#d0cec6}#counter{color:#e8c54a}button{background:none;color:#f4f1e8;border:1px solid #77736a;padding:11px 13px;font-size:10px;letter-spacing:.12em;min-height:43px;cursor:pointer}button:hover,button:focus-visible{border-color:#e8c54a;outline:none}#next{border-color:#e8c54a;color:#e8c54a}#controls{display:flex;gap:8px;align-items:center}@media(max-width:500px){header{font-size:9px;padding-top:2px}footer{align-items:flex-end}#message{font-size:10px;max-width:58%}button{padding:10px 11px}#controls{gap:6px}} @media(max-width:360px){main{padding-left:12px;padding-right:12px}footer{min-height:112px}#message{font-size:9px;letter-spacing:.1em}button{font-size:9px;padding:9px}}
-</style></head><body><main>
-<header><span>STAY IN LINE</span><span id="chapter">01 / THE STRAIGHT LINE</span></header>
-<div id="stage" aria-label="Drag the yellow dot from START to END along the line. Your movement leaves a trace."><canvas id="art"></canvas></div>
-<footer><div id="message" aria-live="polite">FOLLOW THE LINE.<br><span id="counter">START → END</span></div><div id="controls"><button id="reset" type="button">RESET</button><button id="next" type="button" hidden>NEXT ROUTE →</button></div></footer>
-</main><script>
-(()=>{
-'use strict';
-const canvas=document.getElementById('art'),stage=document.getElementById('stage'),ctx=canvas.getContext('2d');
-const message=document.getElementById('message'),counter=document.getElementById('counter'),chapter=document.getElementById('chapter'),reset=document.getElementById('reset'),next=document.getElementById('next');
-let W=1,H=1,dpr=1,level=0,dragId=null,done=false,trail=[],dot=null,route=[],lastProgress=0;
-const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-const routes=[
- [[.5,.86],[.5,.14]],
- [[.5,.89],[.5,.75],[.22,.75],[.22,.57],[.78,.57],[.78,.37],[.38,.37],[.38,.12]]
+:root{
+  --bg:#090909; --white:#f3f2ed; --muted:#9b9a95; --yellow:#f0c73a;
+  --pad:20px; --ease:cubic-bezier(.22,.75,.22,1);
+}
+*{box-sizing:border-box}
+html{margin:0;background:#050505;overflow-x:hidden}
+body{
+  margin:0; min-height:100%; overflow-x:hidden; overflow-y:auto;
+  background:#050505; color:var(--white);
+  font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;
+  font-weight:300; -webkit-font-smoothing:antialiased;
+  -webkit-overflow-scrolling:touch;
+}
+button{font:inherit}
+.shell{
+  width:100%; max-width:430px; margin:0 auto; background:var(--bg);
+  box-shadow:0 0 60px rgba(0,0,0,.35);
+}
+
+/* COVER — normal document flow, never captures scrolling */
+.cover{
+  position:relative; height:112svh; min-height:720px; overflow:hidden;
+  background:
+    radial-gradient(120% 105% at 100% 0%,
+      #575757 0%, #3c3c3c 18%, #252525 42%, #151515 68%, #090909 100%);
+}
+.cover::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.035),transparent 38%,rgba(0,0,0,.2));
+}
+.meta{
+  position:absolute; top:max(22px,env(safe-area-inset-top)); z-index:3;
+  font-size:10px; line-height:1; letter-spacing:.01em;
+  transition:opacity .35s linear,transform .35s linear;opacity:0;transform:translateY(-6px);animation:metaIn 1.1s .15s var(--ease) forwards;
+}
+.meta.left{left:var(--pad)} .meta.right{right:var(--pad)}
+
+.title{
+  position:absolute; z-index:2; top:13.5%; right:var(--pad);
+  width:calc(100% - 40px);
+  text-align:right;
+  font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;
+  font-weight:300;
+  font-size:clamp(78px,24vw,104px);
+  line-height:.82; letter-spacing:-.065em;
+}
+.title .word{
+  display:block; width:100%; text-align:right; white-space:nowrap;
+  transform-origin:100% 50%; will-change:transform,opacity;
+}
+.yellow{color:var(--yellow)}
+.rules{position:absolute;inset:0;pointer-events:none;z-index:1}
+.rule{
+  position:absolute;height:2px;background:rgba(243,242,237,.95);
+  border-radius:99px;will-change:transform,opacity
+}
+.rule.r1{right:var(--pad);top:42.8%;width:52%}
+.rule.r2{left:10%;right:auto;top:57.4%;width:64%}
+.rule.r3{right:9%;top:60.1%;width:54%}
+.cover-copy{
+  position:absolute;left:50%;bottom:20.5%;transform:translate(-50%,10px);
+  width:88%;text-align:center;font-size:8px;line-height:1.55;letter-spacing:.04em;
+  z-index:3;color:#e5e4df;will-change:opacity,transform;opacity:0;animation:copyIn 1.15s .35s var(--ease) forwards
+}
+.start{
+  position:absolute;z-index:5;left:50%;bottom:max(46px,calc(38px + env(safe-area-inset-bottom)));
+  transform:translateX(-50%);border:0;background:transparent;color:var(--white);
+  cursor:pointer;padding:12px 24px;text-align:center;opacity:0;animation:startIn .9s 2s var(--ease) forwards;
+}
+.start .arrow{display:block;font-size:22px;animation:bob 1.8s 2.9s ease-in-out infinite}
+.start .label{display:block;margin-top:5px;font-size:10px;letter-spacing:.16em}
+@keyframes bob{50%{transform:translateY(-6px)}}
+@keyframes copyIn{to{opacity:1;transform:translate(-50%,0)}}
+@keyframes startIn{to{opacity:1}}
+@keyframes metaIn{to{opacity:1;transform:translateY(0)}}
+
+/* EXPERIENCE */
+.experience{
+  position:relative;height:100svh;min-height:650px;
+  padding:calc(18px + env(safe-area-inset-top)) var(--pad)
+          calc(14px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(100% 90% at 100% 0%,#252525 0%,#161616 44%,#0b0b0b 100%);
+  display:flex;flex-direction:column;
+}
+.top{
+  height:42px;display:flex;justify-content:space-between;align-items:flex-start;
+  color:var(--muted);font-size:9px;letter-spacing:.14em;
+}
+.stage{flex:1;min-height:0;position:relative;touch-action:none}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.bottom{
+  min-height:104px;display:flex;align-items:flex-end;justify-content:space-between;
+  gap:12px;padding-top:12px
+}
+.copy{max-width:68%;font-size:9px;line-height:1.65;letter-spacing:.09em;color:var(--muted)}
+.copy strong{display:block;color:var(--white);font-weight:300;margin-bottom:2px}
+.copy em{display:block;color:var(--yellow);font-style:normal}
+.actions{display:flex;gap:6px}
+.actions button{
+  border:1px solid #4d4d49;background:rgba(0,0,0,.08);color:var(--white);
+  padding:10px 9px;font-size:8px;letter-spacing:.1em;cursor:pointer
+}
+.actions .next{border-color:var(--yellow);color:var(--yellow)}
+[hidden]{display:none!important}
+
+/* summary concept */
+.summary-card{
+  position:absolute;inset:0;z-index:10;display:none;align-items:center;justify-content:center;
+  padding:28px;background:rgba(8,8,8,.78);backdrop-filter:blur(6px);text-align:right;
+}
+.summary-card.show{display:flex}
+.summary-inner{width:100%;opacity:0;transform:translateY(18px);transition:900ms var(--ease)}
+.summary-card.show .summary-inner.ready{opacity:1;transform:none}
+.summary-kicker{font-size:9px;letter-spacing:.18em;color:var(--yellow);margin-bottom:20px}
+.summary-inner h2{
+  margin:0 0 22px;font-size:38px;line-height:.94;letter-spacing:-.045em;
+  font-weight:300
+}
+.summary-inner p{margin:0 0 28px auto;max-width:330px;font-size:11px;line-height:1.7;color:#c8c7c2}
+.restart{
+  border:1px solid var(--yellow);background:none;color:var(--yellow);
+  padding:11px 13px;font-size:8px;letter-spacing:.12em
+}
+@media(max-width:360px){
+  :root{--pad:16px}.title{font-size:21vw}.cover-copy{font-size:7.5px}
+}
+@media(min-width:431px){
+  body{background:#050505}
+  .cover,.experience{width:430px}
+  .title{font-size:94px}
+}
+@media(prefers-reduced-motion:reduce){.start .arrow{animation:none}}
+
+/* OPTIONAL IMAGE LAYERS
+   Add <img class="map-art" src="background.png" alt="">
+   and <img class="walker-art" src="person.png" alt=""> inside .cover. */
+.map-art{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  opacity:.20;mix-blend-mode:screen;pointer-events:none;z-index:0;
+}
+.walker-art{
+  position:absolute;left:10%;top:28.5%;width:24%;max-width:105px;height:auto;
+  pointer-events:none;z-index:2;
+}
+
+</style>
+</head>
+<body>
+<main class="shell">
+  <section class="cover" id="cover">
+    <!-- OPTIONAL: put your two PNG/JPG files beside this HTML, then remove the comment marks:
+    <img class="map-art" src="background.png" alt="">
+    <img class="walker-art" src="person.png" alt="">
+    -->
+    <div class="meta left">Design Studio</div>
+    <div class="meta right">Oct.2026</div>
+
+    <div class="title" aria-label="STAY IN LINE">
+      <span class="word" id="wStay"><span class="yellow">ST</span>AY</span>
+      <span class="word" id="wIn"><span class="yellow">I</span>N</span>
+      <span class="word" id="wLine"><span class="yellow">L</span>INE</span>
+    </div>
+
+    <div class="rules">
+      <i class="rule r1"></i><i class="rule r2"></i><i class="rule r3"></i>
+    </div>
+
+    <div class="cover-copy" id="coverCopy">
+      A PATH IS GIVEN.<br>
+      A PATH IS CHOSEN.<br>
+      A PATH IS LEFT BEHIND.<br>
+      A NEW PATH IS CREATED.<br>
+      STAY IN LINE / FOLLOW · CHOOSE · DEVIATE · CREATE
+    </div>
+
+    <button class="start" id="start">
+      <span class="arrow">↑</span><span class="label">Start</span>
+    </button>
+  </section>
+
+  <section class="experience" id="experience">
+    <header class="top"><span>STAY IN LINE</span><span id="levelLabel">01 / FOLLOW</span></header>
+    <div class="stage" id="stage"><canvas id="canvas"></canvas></div>
+    <footer class="bottom">
+      <div class="copy"><strong id="headline"></strong><em id="subline"></em></div>
+      <div class="actions">
+        <button id="reset">RESET</button>
+        <button class="next" id="next" hidden>NEXT →</button>
+      </div>
+    </footer>
+
+    <div class="summary-card" id="summaryCard">
+      <div class="summary-inner" id="summaryInner">
+        <div class="summary-kicker">HOW DO WE FOLLOW A PATH?</div>
+        <h2>FROM FOLLOWING<br>A LINE TO<br>CREATING OUR OWN.</h2>
+        <p>The experience gradually shifts control from the line to the viewer.
+        A path can guide movement, offer choices, be left behind, or emerge through
+        the act of moving itself.</p>
+        <button class="restart" id="restart">RESTART ↻</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* Cover: native page scroll stays untouched. This only reads scroll position. */
+const cover=document.getElementById('cover');
+const exp=document.getElementById('experience');
+const wStay=document.getElementById('wStay');
+const wIn=document.getElementById('wIn');
+const wLine=document.getElementById('wLine');
+const coverCopy=document.getElementById('coverCopy');
+const rules=[...document.querySelectorAll('.rule')];
+const metas=[...document.querySelectorAll('.meta')];
+const start=document.getElementById('start');
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const ease=t=>1-Math.pow(1-t,3);
+
+function coverMotion(){
+  const r=cover.getBoundingClientRect();
+  const p=clamp((-r.top)/(Math.max(1,cover.offsetHeight*.72)));
+  const q=ease(p), fade=1-clamp((p-.45)/.5);
+  wStay.style.transform=`translate3d(${q*34}vw,${-q*1.5}vh,0)`;
+  wIn.style.transform=`translate3d(${-q*34}vw,0,0)`;
+  wLine.style.transform=`translate3d(${q*42}vw,${q*2}vh,0)`;
+  rules[0].style.transform=`translateX(${q*45}vw)`;
+  rules[1].style.transform=`translateX(${-q*45}vw)`;
+  rules[2].style.transform=`translateX(${q*38}vw)`;
+  [...rules,wStay,wIn,wLine].forEach(el=>el.style.opacity=fade);
+  if(p>.03){coverCopy.style.opacity=fade;metas.forEach(el=>el.style.opacity=fade);start.style.opacity=fade;}
+}
+addEventListener('scroll',coverMotion,{passive:true});
+addEventListener('resize',coverMotion,{passive:true});
+coverMotion();
+start.addEventListener('click',()=>exp.scrollIntoView({behavior:'smooth',block:'start'}));
+
+/* Four-level interaction */
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+const stage=document.getElementById('stage');
+const levelLabel=document.getElementById('levelLabel');
+const headline=document.getElementById('headline');
+const subline=document.getElementById('subline');
+const next=document.getElementById('next'),reset=document.getElementById('reset');
+const summaryCard=document.getElementById('summaryCard'),summaryInner=document.getElementById('summaryInner');
+const restart=document.getElementById('restart');
+
+const WHITE='#f3f2ed',YELLOW='#f0c73a',MUTED='#8e8d88';
+let W=0,H=0,DPR=1,level=0,dot,route=[],branches=[],trail=[],dragId=null,chosen=null,progress=0,done=false;
+let records=[null,null,null,null],summaryRAF=0,summaryTimer=0;
+
+const info=[
+ ['01 / FOLLOW','FOLLOW THE LINE.','THE PATH DECIDES WHERE YOU GO.'],
+ ['02 / CHOOSE','CHOOSE A PATH.','MORE THAN ONE WAY CAN LEAD TO THE SAME PLACE.'],
+ ['03 / DEVIATE','THERE IS A PATH.',"BUT YOU DON'T HAVE TO STAY ON IT."],
+ ['04 / CREATE','NO PATH IS GIVEN.','DRAW YOUR OWN WAY.']
 ];
-function toPx(q){return{x:q[0]*W,y:q[1]*H}}
-function buildRoute(){route=routes[level].map(toPx);dot={...route[0]};trail=[{...dot}];lastProgress=0;done=false;dragId=null;next.hidden=true;chapter.textContent=level===0?'01 / THE STRAIGHT LINE':'02 / THE DETOUR';message.innerHTML=level===0?'FOLLOW THE LINE.<br><span id="counter">START → END</span>':'THE ROUTE IS NO LONGER STRAIGHT.<br><span id="counter">START → END</span>';render();}
-function resize(){const r=canvas.getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);dpr=Math.min(devicePixelRatio||1,3);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);if(route.length){const oldW=resize.oldW||W,oldH=resize.oldH||H;trail=trail.map(p=>({x:p.x/oldW*W,y:p.y/oldH*H}));dot={x:dot.x/oldW*W,y:dot.y/oldH*H};route=routes[level].map(toPx);render()}else buildRoute();resize.oldW=W;resize.oldH=H;}
-function line(points,color,width,dash=[]){if(points.length<2)return;ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='round';ctx.setLineDash(dash);ctx.stroke();ctx.setLineDash([])}
-function smooth(points,color,width){if(points.length<2)return;ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);for(let i=1;i<points.length-1;i++){const p=points[i],q=points[i+1];ctx.quadraticCurveTo(p.x,p.y,(p.x+q.x)/2,(p.y+q.y)/2)}const e=points[points.length-1];ctx.lineTo(e.x,e.y);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke()}
-function label(text,p,offset){ctx.fillStyle='#aaa79e';ctx.font='10px Arial, sans-serif';ctx.textAlign='center';ctx.fillText(text,p.x,p.y+offset)}
-function render(){ctx.clearRect(0,0,W,H);line(route,'#f4f1e8',1.5);const a=route[0],b=route[route.length-1];ctx.strokeStyle='#f4f1e8';ctx.lineWidth=1.2;ctx.strokeRect(a.x-5,a.y-5,10,10);ctx.beginPath();ctx.arc(b.x,b.y,5,0,Math.PI*2);ctx.stroke();label('START',a,25);label('END',b,-17);smooth(trail,'rgba(232,197,74,.82)',2);ctx.beginPath();ctx.arc(dot.x,dot.y,7,0,Math.PI*2);ctx.fillStyle='#e8c54a';ctx.fill();if(done){ctx.beginPath();ctx.arc(b.x,b.y,12,0,Math.PI*2);ctx.strokeStyle='rgba(232,197,74,.6)';ctx.stroke()}}
-function pos(e){const r=canvas.getBoundingClientRect();return{x:clamp(e.clientX-r.left,0,W),y:clamp(e.clientY-r.top,0,H)}}
-function nearest(p){let best={dist:Infinity,progress:0},passed=0,total=0;for(let i=1;i<route.length;i++)total+=Math.hypot(route[i].x-route[i-1].x,route[i].y-route[i-1].y);for(let i=1;i<route.length;i++){const a=route[i-1],b=route[i],dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy),t=clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/(len*len||1),0,1),x=a.x+dx*t,y=a.y+dy*t,dist=Math.hypot(p.x-x,p.y-y);if(dist<best.dist)best={dist,progress:(passed+len*t)/total};passed+=len;}return best;}
-function down(e){if(done||dragId!==null)return;const p=pos(e);if(Math.hypot(p.x-dot.x,p.y-dot.y)>Math.max(38,e.pointerType==='touch'?52:38))return;dragId=e.pointerId;stage.setPointerCapture(dragId);e.preventDefault();}
-function move(e){if(e.pointerId!==dragId||done)return;const p=pos(e),near=nearest(p),delta=Math.hypot(p.x-dot.x,p.y-dot.y);if(delta<.4)return;const n=Math.min(100,Math.ceil(delta/3));for(let i=1;i<=n;i++)trail.push({x:dot.x+(p.x-dot.x)*i/n,y:dot.y+(p.y-dot.y)*i/n});dot=p;if(trail.length>5000)trail=trail.filter((_,i)=>i%2===0);if(near.dist<Math.max(27,Math.min(W,H)*.065))lastProgress=Math.max(lastProgress,near.progress);if(lastProgress>.965&&Math.hypot(p.x-route.at(-1).x,p.y-route.at(-1).y)<25){done=true;message.firstChild.textContent=level===0?'YOU REACHED THE END.':'YOU FOUND YOUR WAY.';document.getElementById('counter').textContent=level===0?'THE NEXT LINE WILL BEND.':'EVERY DETOUR LEAVES A TRACE.';if(level===0)next.hidden=false;}render();}
-function up(e){if(e.pointerId!==dragId)return;dragId=null;}
-stage.addEventListener('pointerdown',down);stage.addEventListener('pointermove',move);stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);stage.addEventListener('lostpointercapture',up);
-reset.addEventListener('click',buildRoute);next.addEventListener('click',()=>{level=1;buildRoute()});
-if(window.ResizeObserver)new ResizeObserver(resize).observe(stage);else window.addEventListener('resize',resize);
-resize();
-})();
-</script></body></html>
+const P=(x,y)=>({x:x*W,y:y*H});
+
+function mainRoute(){
+ if(level===0)return[P(.50,.88),P(.50,.12)];
+ if(level===2)return[P(.50,.88),P(.50,.75),P(.23,.75),P(.23,.57),P(.77,.57),P(.77,.38),P(.38,.38),P(.38,.13)];
+ return[];
+}
+function choiceRoutes(){
+ const s=P(.36,.88),e=P(.68,.13);
+ return[
+  [s,P(.25,.78),P(.50,.63),P(.66,.48),P(.54,.36),P(.70,.22),e],
+  [s,P(.43,.78),P(.31,.64),P(.52,.53),P(.66,.48),P(.78,.34),P(.72,.22),e],
+  [s,P(.57,.84),P(.72,.73),P(.60,.61),P(.46,.48),P(.66,.48),P(.82,.39),P(.74,.27),e]
+ ];
+}
+function setup(){
+ clearTimeout(summaryTimer);cancelAnimationFrame(summaryRAF);
+ summaryCard.classList.remove('show');summaryInner.classList.remove('ready');
+ route=mainRoute();branches=level===1?choiceRoutes():[];
+ chosen=null;progress=0;done=false;dragId=null;
+ dot=level===1?{...branches[0][0]}:level===3?P(.50,.88):{...route[0]};
+ trail=[{...dot}];
+ levelLabel.textContent=info[level][0];headline.textContent=info[level][1];subline.textContent=info[level][2];
+ next.hidden=true;reset.hidden=false;draw();
+}
+function resizeCanvas(){
+ const r=canvas.getBoundingClientRect();W=r.width;H=r.height;DPR=Math.min(devicePixelRatio||1,3);
+ canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);
+ if(level<4)setup();
+}
+function strokePath(a,color=WHITE,alpha=1,width=1.35){
+ if(!a||a.length<2)return;
+ ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.beginPath();ctx.moveTo(a[0].x,a[0].y);for(let i=1;i<a.length;i++)ctx.lineTo(a[i].x,a[i].y);ctx.stroke();ctx.restore();
+}
+function strokeTrail(a,color=YELLOW,alpha=1,width=2.2){
+ if(!a||a.length<2)return;
+ ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.beginPath();ctx.moveTo(a[0].x,a[0].y);
+ for(let i=1;i<a.length-1;i++){const p=a[i],q=a[i+1];ctx.quadraticCurveTo(p.x,p.y,(p.x+q.x)/2,(p.y+q.y)/2)}
+ ctx.lineTo(a[a.length-1].x,a[a.length-1].y);ctx.stroke();ctx.restore();
+}
+function marks(a,b){
+ ctx.save();ctx.strokeStyle=WHITE;ctx.lineWidth=1;
+ ctx.strokeRect(a.x-5,a.y-5,10,10);ctx.beginPath();ctx.arc(b.x,b.y,5,0,Math.PI*2);ctx.stroke();
+ ctx.fillStyle=MUTED;ctx.font='8px Helvetica';ctx.textAlign='center';
+ ctx.fillText('START',a.x,a.y+22);ctx.fillText('END',b.x,b.y-14);ctx.restore();
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ let a,b;
+ if(level===0||level===2){strokePath(route);a=route[0];b=route.at(-1)}
+ if(level===1){branches.forEach((r,i)=>strokePath(r,WHITE,chosen===null||chosen===i?1:.22));a=branches[0][0];b=branches[0].at(-1)}
+ if(level===3){a=P(.50,.88);b=P(.50,.12)}
+ if(level===2||level===3||(level===1&&chosen!==null))strokeTrail(trail);
+ marks(a,b);
+ ctx.beginPath();ctx.arc(dot.x,dot.y,6.2,0,Math.PI*2);ctx.fillStyle=YELLOW;ctx.fill();
+}
+function nearest(p,r){
+ let best={d:1e9,x:r[0].x,y:r[0].y,t:0},total=0,passed=0;
+ for(let i=1;i<r.length;i++)total+=Math.hypot(r[i].x-r[i-1].x,r[i].y-r[i-1].y);
+ for(let i=1;i<r.length;i++){
+  const a=r[i-1],b=r[i],dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy);
+  const u=clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/(len*len||1));
+  const q={x:a.x+dx*u,y:a.y+dy*u},d=Math.hypot(p.x-q.x,p.y-q.y);
+  if(d<best.d)best={...q,d,t:(passed+len*u)/total};passed+=len;
+ }
+ return best;
+}
+function pointer(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+function appendTrail(p){
+ const a=trail.at(-1),d=Math.hypot(p.x-a.x,p.y-a.y),n=Math.max(1,Math.ceil(d/3));
+ for(let i=1;i<=n;i++)trail.push({x:a.x+(p.x-a.x)*i/n,y:a.y+(p.y-a.y)*i/n});
+ if(trail.length>4000)trail=trail.filter((_,i)=>i%2===0);
+}
+function normalize(a){
+ const step=Math.max(1,Math.floor(a.length/150));
+ return a.filter((_,i)=>i%step===0).map(p=>[p.x/W,p.y/H]);
+}
+function finish(){
+ done=true;dragId=null;
+ if(level===0&&trail.length<3)trail=route.map(p=>({...p}));
+ records[level]=normalize(trail);next.hidden=false;
+ const end=[
+  ['YOU FOLLOWED THE PATH.','NEXT: CHOOSE.'],
+  ['YOU CHOSE A PATH.','NEXT: DEVIATE.'],
+  ['YOU FOUND YOUR OWN WAY.','NEXT: CREATE.'],
+  ['YOU CREATED A PATH.','NEXT: SEE YOUR MOVEMENT.']
+ ][level];
+ headline.textContent=end[0];subline.textContent=end[1];
+}
+stage.addEventListener('pointerdown',e=>{
+ if(level>=4||done)return;
+ const p=pointer(e),hit=e.pointerType==='touch'?58:38;
+ if(Math.hypot(p.x-dot.x,p.y-dot.y)>hit)return;
+ dragId=e.pointerId;stage.setPointerCapture(dragId);
+});
+stage.addEventListener('pointermove',e=>{
+ if(level>=4||done||e.pointerId!==dragId)return;
+ const p=pointer(e);
+ if(level===0){
+  const n=nearest(p,route),q={x:n.x,y:n.y};appendTrail(q);dot=q;progress=Math.max(progress,n.t);if(progress>.985)finish();
+ }else if(level===1){
+  if(chosen===null){
+   const hit=branches.map((r,i)=>({...nearest(p,r),i})).sort((a,b)=>a.d-b.d)[0];
+   if(hit.t>.045)chosen=hit.i;
+  }
+  const r=branches[chosen??1],n=nearest(p,r),q={x:n.x,y:n.y};appendTrail(q);dot=q;progress=Math.max(progress,n.t);if(progress>.985)finish();
+ }else{
+  appendTrail(p);dot=p;const end=level===2?route.at(-1):P(.50,.12);
+  if(Math.hypot(p.x-end.x,p.y-end.y)<27)finish();
+ }
+ draw();
+});
+stage.addEventListener('pointerup',e=>{if(e.pointerId===dragId)dragId=null});
+stage.addEventListener('pointercancel',e=>{if(e.pointerId===dragId)dragId=null});
+
+function mapRecord(rec){
+ if(!rec||rec.length<2)return[];
+ const q=rec.map(v=>({x:v[0],y:v[1]}));
+ const minX=Math.min(...q.map(p=>p.x)),maxX=Math.max(...q.map(p=>p.x)),minY=Math.min(...q.map(p=>p.y)),maxY=Math.max(...q.map(p=>p.y));
+ const sc=Math.min(.72*W/Math.max(.08,maxX-minX),.72*H/Math.max(.08,maxY-minY)),cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+ return q.map(p=>({x:W/2+(p.x-cx)*sc,y:H/2+(p.y-cy)*sc}));
+}
+function partial(a,t){
+ if(a.length<2)return a;let lens=[],total=0;
+ for(let i=1;i<a.length;i++){let d=Math.hypot(a[i].x-a[i-1].x,a[i].y-a[i-1].y);lens.push(d);total+=d}
+ let target=total*t,used=0,out=[a[0]];
+ for(let i=1;i<a.length;i++){let d=lens[i-1];if(used+d<=target){out.push(a[i]);used+=d}else{let u=clamp((target-used)/(d||1)),A=a[i-1],B=a[i];out.push({x:A.x+(B.x-A.x)*u,y:A.y+(B.y-A.y)*u});break}}
+ return out;
+}
+function startSummary(){
+ level=4;done=true;reset.hidden=true;next.hidden=true;levelLabel.textContent='SUMMARY / YOUR PATHS';headline.textContent='';subline.textContent='';
+ const caps=[
+  ['01 / FOLLOW','THE LINE CONTROLLED YOUR MOVEMENT.'],
+  ['02 / CHOOSE','YOU CHOSE BETWEEN GIVEN PATHS.'],
+  ['03 / DEVIATE','YOU LEFT THE PATH THAT WAS GIVEN.'],
+  ['04 / CREATE','YOU CREATED A PATH OF YOUR OWN.']
+ ];
+ let index=0;
+ function drawSummary(active,t){
+  ctx.clearRect(0,0,W,H);
+  for(let i=0;i<active;i++)strokeTrail(mapRecord(records[i]),YELLOW,Math.max(.18,.48-(active-1-i)*.09),1.5);
+  if(active<4)strokeTrail(partial(mapRecord(records[active]),t),YELLOW,1,2.35);
+ }
+ function animateOne(){
+  if(index>=4){summaryTimer=setTimeout(showConcept,650);return}
+  const startT=performance.now(),dur=1100;
+  function tick(now){
+   const t=clamp((now-startT)/dur);drawSummary(index,t);
+   if(t<1)summaryRAF=requestAnimationFrame(tick);
+   else{
+    levelLabel.textContent=caps[index][0];headline.textContent=caps[index][1];
+    summaryTimer=setTimeout(()=>{headline.textContent='';index++;animateOne()},900);
+   }
+  }
+  summaryRAF=requestAnimationFrame(tick);
+ }
+ animateOne();
+}
+function showConcept(){
+ levelLabel.textContent='SUMMARY / YOUR PATHS';
+ summaryCard.classList.add('show');
+ requestAnimationFrame(()=>setTimeout(()=>summaryInner.classList.add('ready'),60));
+}
+reset.addEventListener('click',setup);
+next.addEventListener('click',()=>{if(level<3){level++;setup()}else startSummary()});
+restart.addEventListener('click',()=>{
+ records=[null,null,null,null];level=0;summaryCard.classList.remove('show');summaryInner.classList.remove('ready');setup();
+});
+new ResizeObserver(resizeCanvas).observe(stage);
+</script>
+</body>
+</html>
