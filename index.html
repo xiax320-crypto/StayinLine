@@ -1,5 +1,3 @@
-
-<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -21,13 +19,12 @@ body{
 }
 button{font:inherit}
 .shell{
-  width:100%; max-width:430px; margin:0 auto; background:var(--bg);
+  position:relative;width:100%;max-width:430px;margin:0 auto;background:var(--bg);overflow:hidden;
   box-shadow:0 0 60px rgba(0,0,0,.35);
 }
 
-/* COVER — normal document flow, never captures scrolling */
 .cover{
-  position:relative; height:112svh; min-height:720px; overflow:hidden;
+  position:relative;width:100%;height:112svh;min-height:720px;overflow:hidden;isolation:isolate;
   background:
     radial-gradient(120% 105% at 100% 0%,
       #575757 0%, #3c3c3c 18%, #252525 42%, #151515 68%, #090909 100%);
@@ -140,16 +137,15 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 }
 @media(prefers-reduced-motion:reduce){.start .arrow{animation:none}}
 
-/* OPTIONAL IMAGE LAYERS
-   Add <img class="map-art" src="background.png" alt="">
-   and <img class="walker-art" src="person.png" alt=""> inside .cover. */
 .map-art{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  opacity:.20;mix-blend-mode:screen;pointer-events:none;z-index:0;
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:55% center;
+  opacity:.18;mix-blend-mode:screen;
+  pointer-events:none;user-select:none;z-index:0;
 }
 .walker-art{
   position:absolute;left:10%;top:28.5%;width:24%;max-width:105px;height:auto;
-  pointer-events:none;z-index:2;
+  pointer-events:none;user-select:none;z-index:2;
 }
 
 </style>
@@ -157,10 +153,10 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 <body>
 <main class="shell">
   <section class="cover" id="cover">
-    <!-- OPTIONAL: put your two PNG/JPG files beside this HTML, then remove the comment marks:
+ 
     <img class="map-art" src="background.png" alt="">
     <img class="walker-art" src="person.png" alt="">
-    -->
+
     <div class="meta left">Design Studio</div>
     <div class="meta right">Oct.2026</div>
 
@@ -212,7 +208,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 </main>
 
 <script>
-/* Cover: native page scroll stays untouched. This only reads scroll position. */
 const cover=document.getElementById('cover');
 const exp=document.getElementById('experience');
 const wStay=document.getElementById('wStay');
@@ -243,7 +238,6 @@ addEventListener('resize',coverMotion,{passive:true});
 coverMotion();
 start.addEventListener('click',()=>exp.scrollIntoView({behavior:'smooth',block:'start'}));
 
-/* Four-level interaction */
 const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
 const stage=document.getElementById('stage');
 const levelLabel=document.getElementById('levelLabel');
