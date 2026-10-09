@@ -4,6 +4,94 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>STAY IN LINE</title>
 <style>
+  .summary-buttons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.reading-main {
+  background: #f0c73a;
+  color: #090909;
+  border: 1px solid #f0c73a;
+  padding: 14px 22px;
+
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  letter-spacing: .12em;
+
+  cursor: pointer;
+  transition: .3s;
+}
+
+.reading-main:hover {
+  background: #ffe17a;
+  transform: translateY(-2px);
+}
+.reading-page {
+  display: none;
+}
+
+.reading-page.active {
+  display: block;
+}
+.reading-page {
+  min-height: 100svh;
+  padding: 60px 24px 100px;
+  background: #090909;
+  color: #f3f2ed;
+}
+
+.reading-content {
+  width: 100%;
+}
+
+.reading-label {
+  color: #f0c73a;
+  font-size: 10px;
+  letter-spacing: .15em;
+  margin-bottom: 50px;
+}
+
+.reading-content h1 {
+  font-size: 48px;
+  font-weight: 300;
+  line-height: .95;
+  letter-spacing: -.05em;
+  margin: 0 0 24px;
+}
+
+.reading-intro {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #aaa;
+  margin-bottom: 80px;
+}
+
+.reading-content article {
+  padding: 35px 0 55px;
+  border-top: 1px solid #555;
+}
+
+.reading-number {
+  font-size: 10px;
+  color: #f0c73a;
+}
+
+.reading-content h2 {
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: -.03em;
+  margin: 20px 0;
+}
+
+.reading-content article p {
+  font-size: 12px;
+  line-height: 1.9;
+  color: #bbb;
+}
 :root{
   --bg:#090909; --white:#f3f2ed; --muted:#9b9a95; --yellow:#f0c73a;
   --pad:20px; --ease:cubic-bezier(.22,.75,.22,1);
@@ -147,7 +235,35 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
   position:absolute;left:10%;top:27%;width:24%;max-width:105px;height:auto;
   pointer-events:none;user-select:none;z-index:2;
 }
+.reading-back {
+  background: none;
+  border: none;
+  color: #f0c73a;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  letter-spacing: .12em;
+  cursor: pointer;
+}
+/* READING — independent page */
+#readingPage {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  width: 100%;
+  max-width: 430px;
+  height: 100dvh;
+  margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #090909;
+  color: #f3f2ed;
+  padding: 55px 24px 90px;
+}
 
+#readingPage.active {
+  display: block;
+}
 </style>
 </head>
 <body>
@@ -194,7 +310,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
         <button class="next" id="next" hidden>NEXT →</button>
       </div>
     </footer>
-
     <div class="summary-card" id="summaryCard">
       <div class="summary-inner" id="summaryInner">
         <div class="summary-kicker">HOW DO WE FOLLOW A PATH?</div>
@@ -202,13 +317,166 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
         <p>The experience gradually shifts control from the line to the viewer.
         A path can guide movement, offer choices, be left behind, or emerge through
         the act of moving itself.</p>
-        <button class="restart" id="restart">RESTART ↻</button>
+       <div class="summary-buttons">
+  <button class="restart" id="restart">
+    RESTART ↻
+  </button>
+
+  <button class="reading-main" id="readingButton">
+    READING →
+  </button>
+ 
+</div>
       </div>
     </div>
   </section>
+  <section class="reading-page" id="readingPage">
+
+
+<div class="reading-content">
+
+  <div class="reading-label">
+    STAY IN LINE / READING
+  </div>
+
+  <h1>DESIRE<br>PATHS.</h1>
+
+  <div class="reading-meta">
+    ELLIE VIOLET BRAMLEY
+  </div>
+
+  <h2 class="article-title">
+    Desire Paths: The Illicit Trails That Defy the Urban Planners
+  </h2>
+
+  <p class="reading-intro">
+    When cities lack the paths pedestrians need,
+    people vote with their feet.
+  </p>
+
+  <article class="reading-article">
+
+    <p>We’ve all been there. You want a short cut – to the bus stop, office or corner shop – but there’s no designated path. Others before you have already flattened the grass, or cut a line through a hedge. Why not, you think.</p>
+
+    <p>So goes the logic of “desire paths” – described by Robert Macfarlane as “paths &amp; tracks made over time by the wishes &amp; feet of walkers, especially those paths that run contrary to design or planning”; he calls them “free-will ways”.</p>
+
+    <p>Desire paths can form anywhere, from forgotten corners of cities to the grounds of national governments. They reveal how people move through spaces differently from how planners expected them to.</p>
+
+    <p>Desire lines present evidence about movement. They reveal the path of least resistance, but also show where people refuse to follow prescribed routes.</p>
+
+    <p>Rather than blocking these unofficial paths, some urban planners choose to incorporate them into the design of cities.</p>
+
+    <p>Architect and urban planner Riccardo Marini describes desire paths as a way of “listening to a place”. They offer evidence of how people actually use their surroundings.</p>
+
+    <p>Some college campuses have waited to see where students and teachers naturally walk before deciding where to build paved paths.</p>
+
+    <p>Broadway in New York City is also connected to an earlier Native American route, the Wickquasgeck Path, which followed a practical path through Manhattan's landscape.</p>
+
+    <p>Desire paths are more than shortcuts. They can preserve the history of movement and reveal the relationship between people and the built environment.</p>
+
+    <p>For Andrew Furman, desire paths express the human desire for choice and the importance of not having someone else prescribe your route.</p>
+
+    <blockquote class="reading-quote">
+      “Walking is a mode of making the world as well as being in it.”
+    </blockquote>
+
+    <p class="reading-source">
+      — Rebecca Solnit, Wanderlust
+    </p>
+
+  </article>
+
+  <div class="reading-end">
+   STAY IN LINE
+  </div>
+
+<!-- READING 02 -->
+<section class="reading-second">
+
+  <div class="reading-label">
+    STAY IN LINE / READING 02
+  </div>
+
+  <h1 class="reading-second-title">
+    I'M<br>WALKING<br>HERE!
+  </h1>
+
+  <div class="reading-meta">
+    ASSOCIATED PRESS
+  </div>
+
+  <h2 class="article-title">
+    "I'm Walking Here!": Jaywalking Legalized in New York City
+  </h2>
+
+  <p class="reading-intro">
+    Jaywalking is now legal in New York City.
+  </p>
+
+  <article class="reading-article">
+
+    <p>Jaywalking – that time-honored practice of crossing the street outside of the crosswalk or against the traffic light – is now legal in New York City.</p>
+
+    <p>Legislation passed by the city council officially became law after Mayor Eric Adams declined to sign or veto it within 30 days.</p>
+
+    <p>Council member Mercedes Narcisse, who sponsored the legislation, said the law addresses racial disparities in enforcement. More than 90% of jaywalking tickets issued the previous year went to Black and Latino people.</p>
+
+    <blockquote class="reading-quote">
+      “Let’s be real, every New Yorker jaywalks.”
+    </blockquote>
+
+    <p>The new law allows pedestrians to cross outside designated crosswalks and against traffic signals without violating the city's administrative code.</p>
+
+    <p>However, pedestrians crossing outside a crosswalk do not have the right of way and must yield to traffic that does.</p>
+
+    <p>City officials continue to encourage pedestrians to use crosswalks and pedestrian safety infrastructure, emphasizing the risks of crossing against traffic signals.</p>
+
+    <p>Other cities and states, including Denver, Kansas City, California, Nevada, and Virginia, have also decriminalized jaywalking in recent years.</p>
+
+    <p>According to the pedestrian advocacy organization America Walks, jaywalking laws were promoted by the automobile industry in the 1930s as streets increasingly became spaces for vehicles.</p>
+
+    <p>New York City's jaywalking law had existed since 1958 and carried a fine of up to $250.</p>
+
+    <p>The Legal Aid Society welcomed the change, arguing that jaywalking enforcement had been used disproportionately against communities of color.</p>
+
+    <p>The legislation raises questions about how cities regulate everyday movement and whether rules should reflect how people actually use streets.</p>
+
+  </article>
+
+  <div class="reading-end">
+  STAY IN LINE
+  </div>
+
+</section>
+
+
+
+
+  </div>
+
+</section>
 </main>
 
 <script>
+ 
+const readingButton = document.getElementById("readingButton");
+const readingPage = document.getElementById("readingPage");
+const experience = document.getElementById("experience");
+
+// 初始状态：隐藏 Reading，正常显示封面和游戏
+readingPage.classList.remove("active");
+document.body.style.overflow = "";
+document.getElementById("cover").style.display = "";
+experience.style.display = "";
+
+// 只有点击最后 Concept 页的 READING 按钮才显示文章
+readingButton.addEventListener("click", () => {
+  readingPage.classList.add("active");
+  readingPage.scrollTop = 0;
+  document.body.style.overflow = "hidden";
+});
+
+
 const cover=document.getElementById('cover');
 const exp=document.getElementById('experience');
 const wStay=document.getElementById('wStay');
@@ -429,6 +697,7 @@ restart.addEventListener('click',()=>{
  records=[null,null,null,null];level=0;summaryCard.classList.remove('show');summaryInner.classList.remove('ready');setup();
 });
 new ResizeObserver(resizeCanvas).observe(stage);
+
 </script>
 </body>
 </html>
