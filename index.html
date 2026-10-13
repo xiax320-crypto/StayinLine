@@ -135,7 +135,7 @@ button{font:inherit}
   font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;
   font-weight:300;
   font-size:clamp(78px,30vw,150px);
-  line: height 0.7em;; letter-spacing:-.065em;
+  line: height 0.7; letter-spacing:-.065em;
 }
 .title .word{
   display:block; width:100%; text-align:right; white-space:nowrap;
@@ -147,9 +147,9 @@ button{font:inherit}
   position:absolute;height:2px;background:rgba(243,242,237,.95);
   border-radius:99px;will-change:transform,opacity
 }
-.rule.r1{right:var(--pad);top:34%;width:37%}
-.rule.r2{left:10%;right:auto;top:47%;width:64%}
-.rule.r3{right:9%;top:50%;width:54%}
+.rule.r1{right:var(--pad);top:27%;width:37%}
+.rule.r2{left:20%;right:auto;top:40%;width:64%}
+.rule.r3{right:10%;top:42%;width:54%}
 .cover-copy{
   position:absolute;left:50%;bottom:20.5%;transform:translate(-50%,10px);
   width:88%;text-align:center;font-size:8px;line-height:1.55;letter-spacing:.04em;
@@ -232,7 +232,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
   pointer-events:none;user-select:none;z-index:0;
 }
 .walker-art{
-  position:absolute;left:10%;top:27%;width:24%;max-width:105px;height:auto;
+  position:absolute;left:10%;top:15%;width:24%;max-width:105px;height:auto;
   pointer-events:none;user-select:none;z-index:2;
 }
 .reading-back {
@@ -264,6 +264,94 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 #readingPage.active {
   display: block;
 }
+
+/* EXTENDED COVER */
+
+#cover {
+  min-height: 155svh;
+  height: auto;
+}
+
+/* Introduction block */
+.cover-intro {
+  position: relative;
+  z-index: 5;
+
+  width: calc(100% - 48px);
+  margin: 0 auto;
+
+  padding: 40px 0 110px;
+  color: #f3f2ed;
+}
+
+.intro-number {
+  font-size: 10px;
+  letter-spacing: .18em;
+  color: #f0c73a;
+  margin-bottom: 30px;
+}
+
+.intro-heading {
+  font-size: clamp(34px, 9vw, 44px);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -.055em;
+  margin: 0 0 35px;
+}
+
+.intro-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #f0c73a;
+  margin-bottom: 28px;
+}
+
+.intro-body {
+  max-width: 320px;
+  font-size: 13px;
+  line-height: 1.9;
+  font-weight: 300;
+  color: #bcbcbc;
+  margin-bottom: 20px;
+}
+
+.intro-stages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 12px;
+  margin: 40px 0;
+  padding: 22px 0;
+  border-top: 1px solid #555;
+  border-bottom: 1px solid #555;
+}
+
+.intro-stages span {
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: #ddd;
+}
+
+.intro-highlight {
+  font-size: 18px;
+  line-height: 1.5;
+  letter-spacing: -.025em;
+  color: #f0c73a;
+  margin-bottom: 35px;
+}
+
+.cover-intro {
+  margin: 105svh auto 0;
+}
+.cover-intro #startHint {
+  position: relative;
+  top: auto;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  transform: none;
+  margin: 55px auto 0;
+  width: fit-content;
+}
 </style>
 </head>
 <body>
@@ -287,13 +375,47 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
       <i class="rule r1"></i><i class="rule r2"></i><i class="rule r3"></i>
     </div>
 
-    <div class="cover-copy" id="coverCopy">
-      A PATH IS GIVEN.<br>
-      A PATH IS CHOSEN.<br>
-      A PATH IS LEFT BEHIND.<br>
-      A NEW PATH IS CREATED.<br>
-      STAY IN LINE · FOLLOW · CHOOSE · DEVIATE · CREATE
-    </div>
+    
+
+<div class="cover-intro">
+
+  <div class="intro-number">
+  </div>
+
+  <h2 class="intro-heading">
+    HOW DO WE<br>
+    WALK IN OUR CITY?
+  </h2>
+
+  <p class="intro-description">
+    This is an interactive game about rules and movement
+  </p>
+
+  <p class="intro-body">
+    Every day, we follow paths designed for us.
+    Lines tell us where to go, where to stop,
+    and how to move.
+  </p>
+
+  <p class="intro-body">
+    But what happens when we choose
+    a different way?
+  </p>
+
+  <div class="intro-stages">
+    <span>01 FOLLOW</span>
+    <span>02 CHOOSE</span>
+    <span>03 DEVIATE</span>
+    <span>04 CREATE</span>
+  </div>
+
+  <p class="intro-highlight">
+    MOVE THE DOT.<br>
+    QUESTION THE LINE.<br>
+    MAKE YOUR OWN PATH.
+  </p>
+
+</div>
 
     <button class="start" id="start">
       <span class="arrow">↑</span><span class="label">Start</span>
@@ -500,7 +622,11 @@ function coverMotion(){
   rules[1].style.transform=`translateX(${-q*45}vw)`;
   rules[2].style.transform=`translateX(${q*38}vw)`;
   [...rules,wStay,wIn,wLine].forEach(el=>el.style.opacity=fade);
-  if(p>.03){coverCopy.style.opacity=fade;metas.forEach(el=>el.style.opacity=fade);start.style.opacity=fade;}
+  if (p > .03) {
+  if (coverCopy) coverCopy.style.opacity = fade;
+  metas.forEach(el => el.style.opacity = fade);
+  start.style.opacity = fade;
+}
 }
 addEventListener('scroll',coverMotion,{passive:true});
 addEventListener('resize',coverMotion,{passive:true});
@@ -696,7 +822,15 @@ next.addEventListener('click',()=>{if(level<3){level++;setup()}else startSummary
 restart.addEventListener('click',()=>{
  records=[null,null,null,null];level=0;summaryCard.classList.remove('show');summaryInner.classList.remove('ready');setup();
 });
-new ResizeObserver(resizeCanvas).observe(stage);
+// 初始化游戏画布
+resizeCanvas();
+
+// 监听游戏区域尺寸变化
+new ResizeObserver(() => {
+  if (stage.clientWidth > 0 && stage.clientHeight > 0) {
+    resizeCanvas();
+  }
+}).observe(stage);
 
 </script>
 </body>
